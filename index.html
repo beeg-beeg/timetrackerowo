@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>0w0 Deadline Tracker</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>0w0</text></svg>" />
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- Titlebar -->
+  <div class="titlebar">
+    <div class="dots">
+      <div class="dot r"></div>
+      <div class="dot y"></div>
+      <div class="dot g"></div>
+    </div>
+    <div class="titlebar-title">0w0 Deadline Tracker</div>
+    <div class="titlebar-actions">
+      <button class="tb-btn active" id="btn-view-list" onclick="App.setView('list')">Список</button>
+      <button class="tb-btn" id="btn-view-cal" onclick="App.setView('calendar')">Календарь</button>
+      <button class="tb-btn" id="btn-view-stats" onclick="App.setView('stats')">Статистика</button>
+    </div>
+  </div>
+
+  <!-- Layout -->
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Фильтр</div>
+        <button class="sidebar-item active" id="cat-all" onclick="App.setCategory('all')">
+          <span class="sidebar-dot" style="background:#888780;"></span>
+          Все <span class="sidebar-count" id="cnt-all">0</span>
+        </button>
+        <button class="sidebar-item" id="cat-urgent" onclick="App.setCategory('urgent')">
+          <span class="sidebar-dot" style="background:#E24B4A;"></span>
+          Срочные <span class="sidebar-count" id="cnt-urgent">0</span>
+        </button>
+        <button class="sidebar-item" id="cat-done" onclick="App.setCategory('done')">
+          <span class="sidebar-dot" style="background:#28C840;"></span>
+          Готово <span class="sidebar-count" id="cnt-done">0</span>
+        </button>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Категории</div>
+        <div id="cat-list"></div>
+      </div>
+      <div class="sidebar-section sidebar-bottom">
+        <div class="sidebar-label">Данные</div>
+        <button class="sidebar-item" onclick="App.exportData()">
+          <span class="icon-small">↓</span> Скачать JSON
+        </button>
+        <button class="sidebar-item" onclick="App.importTrigger()">
+          <span class="icon-small">↑</span> Загрузить JSON
+        </button>
+        <input type="file" id="import-file" accept=".json" style="display:none;" onchange="App.importData(event)" />
+      </div>
+    </div>
+
+    <!-- Main area -->
+    <div class="main">
+
+      <!-- List View -->
+      <div id="view-list-area" class="view-wrapper">
+        <div class="main-header">
+          <div class="main-title" id="list-title">Все дедлайны</div>
+          <button class="add-btn" onclick="Modal.open()">+ Добавить</button>
+        </div>
+        <div class="tab-bar">
+          <div class="tab active" id="tab-active" onclick="App.setTab('active')">Активные</div>
+          <div class="tab" id="tab-done-tab" onclick="App.setTab('done')">Выполненные</div>
+        </div>
+        <div class="view-area" id="deadline-list"></div>
+      </div>
+
+      <!-- Calendar View -->
+      <div id="view-cal-area" class="view-wrapper" style="display:none;">
+        <div class="main-header">
+          <div class="main-title">Календарь</div>
+        </div>
+        <div class="view-area">
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="Cal.prev()">‹</button>
+            <span class="cal-month" id="cal-month-label"></span>
+            <button class="cal-nav-btn" onclick="Cal.next()">›</button>
+          </div>
+          <div class="calendar-grid" id="cal-days-header"></div>
+          <div style="height:8px;"></div>
+          <div class="calendar-grid" id="cal-days"></div>
+          <div style="margin-top:16px;">
+            <div class="sidebar-label">Дедлайны в этом месяце</div>
+            <div id="cal-month-list" style="margin-top:8px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats View -->
+      <div id="view-stats-area" class="view-wrapper" style="display:none;">
+        <div class="main-header">
+          <div class="main-title">Статистика</div>
+        </div>
+        <div class="view-area">
+          <div class="stats-row" id="stats-cards"></div>
+          <div class="sidebar-label" style="margin-bottom:8px;">Активность (последние 12 недель)</div>
+          <div class="heatmap-row" id="heatmap"></div>
+          <div class="heatmap-legend">
+            <span>Меньше</span>
+            <div class="hm-cell hm-0"></div>
+            <div class="hm-cell hm-1"></div>
+            <div class="hm-cell hm-2"></div>
+            <div class="hm-cell hm-3"></div>
+            <span>Больше</span>
+          </div>
+          <div style="height:16px;"></div>
+          <div class="sidebar-label" style="margin-bottom:8px;">По категориям</div>
+          <div id="cat-breakdown"></div>
+        </div>
+      </div>
+
+      <!-- Pomodoro Bar -->
+      <div class="pomodoro-bar">
+        <div>
+          <div class="pom-label" id="pom-label">Фокус</div>
+          <div class="pom-time" id="pom-time">25:00</div>
+        </div>
+        <div class="progress-bar" style="flex:1;">
+          <div class="progress-fill" id="pom-fill" style="width:100%;background:#378ADD;"></div>
+        </div>
+        <div class="pom-task" id="pom-task">Выберите задачу →</div>
+        <div class="pom-btns">
+          <button class="pom-btn pom-start" id="pom-start-btn" onclick="Pom.toggle()">Старт</button>
+          <button class="pom-btn" onclick="Pom.reset()">Сброс</button>
+        </div>
+        <div class="pom-session" id="pom-session">Сессия 1</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal" onclick="Modal.overlayClick(event)">
+    <div class="modal">
+      <div class="modal-title" id="modal-title">Новый дедлайн</div>
+      <div class="form-group">
+        <label class="form-label">Название</label>
+        <input class="form-input" id="f-title" placeholder="Название проекта" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Дедлайн</label>
+          <input class="form-input" id="f-date" type="date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Категория</label>
+          <input class="form-input" id="f-category" placeholder="Игровой дизайн" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Прогресс: <span id="f-prog-val">0%</span></label>
+        <input class="form-input range-input" id="f-progress" type="range" min="0" max="100" value="0"
+          oninput="document.getElementById('f-prog-val').textContent=this.value+'%'" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Цвет</label>
+        <div class="color-picker" id="color-picker"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Заметки</label>
+        <textarea class="form-input" id="f-notes" rows="2" placeholder="Дополнительная информация..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="Modal.close()">Отмена</button>
+        <button class="btn-save" onclick="Modal.save()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/pomodoro.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/modal.js"></script>
+<script src="js/render.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
